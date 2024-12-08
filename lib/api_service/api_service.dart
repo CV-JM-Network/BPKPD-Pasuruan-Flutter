@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:email_otp/email_otp.dart';
 import 'package:http/http.dart' as http;
 
 import 'registrasi/confirmation_request.dart';
@@ -20,6 +21,13 @@ class ApiService {
     final response = await http.post(url, headers: headers, body: body);
 
     if (response.statusCode == 201) {
+      try {
+        await EmailOTP.sendOTP(email: request.email);
+      } catch (e) {
+        print('Failed to send OTP: $e');
+        // Handle email sending error (e.g., display an error message to the user)
+      }
+
       return RegistrationResponse.fromJson(jsonDecode(response.body));
     } else {
       throw Exception('Registration failed: ${response.statusCode}');
@@ -31,11 +39,15 @@ class ApiService {
     final url = Uri.parse('${baseUrl}user/registrasi/konfirmasi');
     final headers = {
       'Authorization': 'Bearer 7735676020',
-      'Content-Type': 'application/json',
     };
-    final body = jsonEncode(request.toJson());
 
-    final response = await http.post(url, headers: headers, body: body);
+    final body = {
+      'kode_konfirmasi': request.kodeKonfirmasi,
+      'device_id': request.deviceId,
+    };
+
+    final response =
+        await http.post(url, headers: headers, body: jsonEncode(body));
 
     if (response.statusCode == 201) {
       return RegistrationResponse.fromJson(jsonDecode(response.body));

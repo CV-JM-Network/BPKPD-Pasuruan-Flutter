@@ -1,4 +1,3 @@
-import 'package:bpkpd_pasuruan_app/screens/verification_code.dart';
 import 'package:flutter/material.dart';
 
 import 'text_widget.dart';
@@ -27,11 +26,11 @@ class ButtonWidget extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const VerificationCode()));
-                ;
+                // Navigator.push(
+                //     context,
+                //     MaterialPageRoute(
+                //         builder: (context) => const VerificationCode()));
+                // ;
               },
               child: TextWidget(
                   text: text,

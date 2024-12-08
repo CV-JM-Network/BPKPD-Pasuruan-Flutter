@@ -204,8 +204,9 @@ class _RegisterState extends State<Register> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) =>
-                                            VerificationCode(),
+                                        builder: (context) => VerificationCode(
+                                          email: _emailController.text,
+                                        ),
                                       ),
                                     );
                                   } catch (e) {

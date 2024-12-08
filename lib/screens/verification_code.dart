@@ -1,10 +1,14 @@
+import 'package:bpkpd_pasuruan_app/screens/login.dart';
+import 'package:email_otp/email_otp.dart';
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 
 import 'widget/text_widget.dart';
 
 class VerificationCode extends StatefulWidget {
-  const VerificationCode({super.key});
+  const VerificationCode({super.key, required this.email});
+
+  final String email;
 
   @override
   State<VerificationCode> createState() => _VerificationCodeState();
@@ -12,6 +16,46 @@ class VerificationCode extends StatefulWidget {
 
 class _VerificationCodeState extends State<VerificationCode> {
   bool isFocused = false;
+
+  final _codeController = TextEditingController();
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    EmailOTP.config(
+      appName: 'BPKPD Pasuruan App',
+      otpType: OTPType.numeric,
+      emailTheme: EmailTheme.v3,
+      appEmail: 'me@jaylangkung.com',
+      otpLength: 4,
+    );
+  }
+
+  Future<void> _verifyOTP(String pin) async {
+    try {
+      bool isVerified = await EmailOTP.verifyOTP(otp: pin);
+
+      if (isVerified) {
+        // Navigate to the next screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Login(),
+          ),
+        );
+      } else {
+        setState(() {
+          _errorMessage = 'Invalid OTP';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Verification failed: $e';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,18 +110,23 @@ class _VerificationCodeState extends State<VerificationCode> {
             ),
             TextWidget(
                 text:
-                    "Please enter the verification code that we sent to your email xyz@gmail.com",
+                    "Please enter the verification code that we sent to your email ${widget.email}",
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: Colors.grey[700]),
             const SizedBox(
               height: 45,
             ),
-            const SizedBox(
+            SizedBox(
               width: double.infinity,
               child: Pinput(
                 length: 4,
                 crossAxisAlignment: CrossAxisAlignment.center,
+                onChanged: (value) {
+                  if (value.length == 4) {
+                    _verifyOTP(value);
+                  }
+                },
               ),
             ),
             const SizedBox(
