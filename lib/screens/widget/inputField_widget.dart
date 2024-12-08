@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
 
-class EmailField extends StatelessWidget {
-  const EmailField({
-    super.key,
-  });
+class InputField extends StatelessWidget {
+  const InputField(
+      {super.key,
+      required this.controller,
+      required this.text,
+      required this.icon,
+      this.type});
+
+  final TextEditingController controller;
+  final String text;
+  final IconData icon;
+  final TextInputType? type;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      keyboardType: type,
+      controller: controller,
       decoration: InputDecoration(
-        hintText: 'Enter your email',
+        hintText: text,
         hintStyle:
             TextStyle(color: Colors.grey[500], fontWeight: FontWeight.w400),
-        prefixIcon: const Icon(
-          Icons.email_outlined,
-        ),
+        prefixIcon: Icon(icon),
         prefixIconColor: WidgetStateColor.resolveWith((states) =>
             states.contains(WidgetState.focused) ? Colors.green : Colors.grey),
         filled: true,

@@ -4,7 +4,6 @@ import 'package:bpkpd_pasuruan_app/screens/widget/passwordField_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'widget/emailField_widget.dart';
 import 'widget/text_widget.dart';
 
 class Login extends StatefulWidget {
@@ -20,7 +19,7 @@ class _LoginState extends State<Login> {
   int? _sliding = 0;
 
   var emailController = TextEditingController();
-  var passwordController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +86,7 @@ class _LoginState extends State<Login> {
                 const SizedBox(
                   height: 15,
                 ),
-                const EmailField(),
+                // const InputField(),
                 const SizedBox(
                   height: 25,
                 ),
@@ -100,7 +99,9 @@ class _LoginState extends State<Login> {
                 const SizedBox(
                   height: 15,
                 ),
-                const PasswordField(),
+                PasswordField(
+                  passwordController: _passwordController,
+                ),
                 const SizedBox(
                   height: 15,
                 ),

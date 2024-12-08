@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class PasswordField extends StatefulWidget {
-  const PasswordField({super.key});
+  const PasswordField({super.key, required this.passwordController});
+
+  final TextEditingController passwordController;
 
   @override
   State<PasswordField> createState() => _PasswordFieldState();
@@ -10,11 +12,10 @@ class PasswordField extends StatefulWidget {
 class _PasswordFieldState extends State<PasswordField> {
   bool _obscureText = true;
 
-  var passwordController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: passwordController,
+      controller: widget.passwordController,
       obscureText: _obscureText,
       decoration: InputDecoration(
         hintText: 'Enter your password',
