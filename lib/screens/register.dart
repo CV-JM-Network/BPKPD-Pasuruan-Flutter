@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../api_service/api_service.dart';
 import '../api_service/registrasi/registration_request.dart';
+import '../api_service/wa_api_service.dart';
 import 'verification_code.dart';
 import 'widget/inputField_widget.dart';
 import 'widget/text_widget.dart';
@@ -26,7 +27,48 @@ class _RegisterState extends State<Register> {
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _alamatController = TextEditingController();
   final TextEditingController _telponController = TextEditingController();
-  String? deviceToken = "blablab"; // Initialize with null
+  String? deviceToken = "deviceId"; // Initialize with null
+
+  final _apiService = OCAWaApiService();
+
+  bool _isLoading = false;
+
+  void _sendMessage() async {
+    final phoneNumber = _telponController.text.trim();
+    final name = _namaController.text.trim();
+    const templateCodeId =
+        "ff6a239f_29b7_4a83_ac0f_9a8bc688b04a:welcoming_template_02";
+
+    if (phoneNumber.isEmpty || name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please fill in all fields")),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _apiService.sendMessage(
+        phoneNumber: phoneNumber,
+        templateCodeId: templateCodeId,
+        name: name,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Message sent successfully!")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to send message: $e")),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,6 +242,8 @@ class _RegisterState extends State<Register> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text(response.message)),
                                     );
+
+                                    _sendMessage();
                                     // Navigate to Confirmation Screen
                                     Navigator.push(
                                       context,

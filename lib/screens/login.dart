@@ -1,9 +1,13 @@
 import 'package:bpkpd_pasuruan_app/screens/forgot_password.dart';
+import 'package:bpkpd_pasuruan_app/screens/jenis_pengajuan.dart';
 import 'package:bpkpd_pasuruan_app/screens/register.dart';
+import 'package:bpkpd_pasuruan_app/screens/widget/inputField_widget.dart';
 import 'package:bpkpd_pasuruan_app/screens/widget/passwordField_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../api_service/api_service.dart';
+import '../api_service/login/login_response.dart';
 import 'widget/text_widget.dart';
 
 class Login extends StatefulWidget {
@@ -18,8 +22,56 @@ class _LoginState extends State<Login> {
   bool isFocused = false;
   int? _sliding = 0;
 
-  var emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _apiService = ApiService();
+
+  bool _isLoading = false;
+
+  void _login() async {
+    setState(() {
+      _isLoading = true; // Tampilkan indikator loading
+    });
+
+    try {
+      // Memanggil fungsi login dengan parameter yang sesuai
+      final response = await _apiService.login(
+        _emailController.text,
+        _passwordController.text,
+        'deviceId', // Device token yang digunakan
+      );
+
+      // Menambahkan log untuk melihat response login
+      print("Login response: $response");
+
+      // Memparsing response menjadi LoginResponse
+      final loginResponse = LoginResponse.fromJson(response);
+
+      // Mengecek status login dan menampilkan pesan
+      if (loginResponse.status.toLowerCase() == 'success') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loginResponse.message)),
+        );
+
+        // Navigasi ke halaman berikutnya setelah login berhasil
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => JenisPengajuan()));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loginResponse.message)),
+        );
+      }
+    } catch (e) {
+      // Menampilkan pesan error jika terjadi exception
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false; // Sembunyikan indikator loading
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +138,10 @@ class _LoginState extends State<Login> {
                 const SizedBox(
                   height: 15,
                 ),
-                // const InputField(),
+                InputField(
+                    controller: _emailController,
+                    text: 'Enter your email',
+                    icon: Icons.email_outlined),
                 const SizedBox(
                   height: 25,
                 ),
@@ -138,19 +193,68 @@ class _LoginState extends State<Login> {
                   height: 50,
                   width: double.infinity,
                   child: Expanded(
-                      child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          onPressed: () {},
-                          child: const TextWidget(
-                              text: "sign in",
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white))),
+                      child: _isLoading
+                          ? CircularProgressIndicator()
+                          : ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: _login,
+                              // onPressed: () async {
+                              //   if (_formKey.currentState != null &&
+                              //       _formKey.currentState!.validate()) {
+                              //     try {
+                              //       final request = LoginRequest(
+                              //         email: _emailController.text,
+                              //         password: _passwordController.text,
+                              //         deviceToken: deviceToken!,
+                              //       );
+
+                              //       final response =
+                              //           await ApiService().loginUser(request);
+
+                              //       if (response.status == 'success') {
+                              //         // Periksa status respon dari server
+                              //         print(
+                              //             'Login successful: ${response.message}');
+                              //         ScaffoldMessenger.of(context).showSnackBar(
+                              //           SnackBar(content: Text(response.message)),
+                              //         );
+                              //         Navigator.push(
+                              //           context,
+                              //           MaterialPageRoute(
+                              //             builder: (context) => JenisPengajuan(),
+                              //           ),
+                              //         );
+                              //       } else {
+                              //         // Tampilkan pesan error jika status tidak 'success'
+                              //         print('Login failed: ${response.message}');
+                              //         ScaffoldMessenger.of(context).showSnackBar(
+                              //           SnackBar(
+                              //               content: Text(
+                              //                   'Login failed: ${response.message}')),
+                              //         );
+                              //       }
+                              //     } catch (e) {
+                              //       print('Login failed: $e');
+                              //       ScaffoldMessenger.of(context).showSnackBar(
+                              //         SnackBar(content: Text('Login failed: $e')),
+                              //       );
+                              //     }
+                              //   } else {
+                              //     ScaffoldMessenger.of(context).showSnackBar(
+                              //       SnackBar(content: Text('Formulir tidak valid')),
+                              //     );
+                              //   }
+                              // },
+                              child: const TextWidget(
+                                  text: "sign in",
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white))),
                 ),
               ],
             ),

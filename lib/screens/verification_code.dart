@@ -1,14 +1,15 @@
 import 'package:bpkpd_pasuruan_app/screens/login.dart';
-import 'package:email_otp/email_otp.dart';
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 
+import '../api_service/api_service.dart';
+import '../api_service/registrasi/confirmation_request.dart';
 import 'widget/text_widget.dart';
 
 class VerificationCode extends StatefulWidget {
-  const VerificationCode({super.key, required this.email});
+  const VerificationCode({super.key, this.email});
 
-  final String email;
+  final String? email;
 
   @override
   State<VerificationCode> createState() => _VerificationCodeState();
@@ -19,42 +20,99 @@ class _VerificationCodeState extends State<VerificationCode> {
 
   final _codeController = TextEditingController();
   String _errorMessage = '';
+  bool _isLoading = true;
 
-  @override
-  void initState() {
-    super.initState();
-    EmailOTP.config(
-      appName: 'BPKPD Pasuruan App',
-      otpType: OTPType.numeric,
-      emailTheme: EmailTheme.v3,
-      appEmail: 'me@jaylangkung.com',
-      otpLength: 4,
-    );
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   EmailOTP.config(
+  //     appName: 'BPKPD Pasuruan App',
+  //     otpType: OTPType.numeric,
+  //     emailTheme: EmailTheme.v3,
+  //     appEmail: 'me@jaylangkung.com',
+  //     otpLength: 4,
+  //   );
+  // }
 
-  Future<void> _verifyOTP(String pin) async {
+  void _verifyOTP(String otp) async {
+    setState(() {
+      _isLoading = true; // Tampilkan indikator loading
+    });
+
     try {
-      bool isVerified = await EmailOTP.verifyOTP(otp: pin);
+      final request = ConfirmationRequest(
+        kodeKonfirmasi: otp,
+        deviceId: 'deviceId', // Device ID asli
+      );
 
-      if (isVerified) {
-        // Navigate to the next screen
+      final response = await ApiService().confirmRegistration(request);
+
+      if (response.status == "Success") {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response.message)),
+        );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => Login(),
-          ),
+          MaterialPageRoute(builder: (context) => Login()),
         );
       } else {
-        setState(() {
-          _errorMessage = 'Invalid OTP';
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Invalid OTP. Please try again.")),
+        );
       }
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Verification failed: $e")),
+      );
+    } finally {
       setState(() {
-        _errorMessage = 'Verification failed: $e';
+        _isLoading = false; // Sembunyikan indikator loading
       });
     }
   }
+
+  // void _verifyOTP(String otp) async {
+  //   setState(() {
+  //     _isLoading = true; // Tampilkan indikator loading
+  //   });
+
+  //   try {
+  //     final request = ConfirmationRequest(
+  //       kodeKonfirmasi: otp,
+  //       deviceId: 'blablab', // Sesuaikan dengan device ID yang dikirimkan
+  //     );
+
+  //     // Panggil API untuk verifikasi OTP
+  //     final response = await ApiService().confirmRegistration(request);
+
+  //     if (response.status == "success") {
+  //       // OTP valid
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text(response.message)),
+  //       );
+
+  //       // Navigasi ke halaman berikutnya
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(builder: (context) => Login()),
+  //       );
+  //     } else {
+  //       // OTP tidak valid
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text("Invalid OTP. Please try again.")),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     // Tangani error
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Verification failed: $e")),
+  //     );
+  //   } finally {
+  //     setState(() {
+  //       _isLoading = false; // Sembunyikan indikator loading
+  //     });
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
