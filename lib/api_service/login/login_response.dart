@@ -2,10 +2,13 @@ class LoginResponse {
   final String status;
   final String message;
   final Data? data;
-  final String? tokenAuth;
+  final String tokenAuth;
 
   LoginResponse(
-      {required this.status, required this.message, this.data, this.tokenAuth});
+      {required this.status,
+      required this.message,
+      this.data,
+      required this.tokenAuth});
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(

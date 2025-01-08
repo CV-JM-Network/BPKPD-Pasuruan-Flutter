@@ -5,12 +5,12 @@ class InputField extends StatelessWidget {
       {super.key,
       required this.controller,
       required this.text,
-      required this.icon,
+      this.icon,
       this.type});
 
   final TextEditingController controller;
   final String text;
-  final IconData icon;
+  final IconData? icon;
   final TextInputType? type;
 
   @override

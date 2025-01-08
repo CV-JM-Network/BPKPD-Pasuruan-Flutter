@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
-import 'widget/button_widget.dart';
+import '../api_service/api_service.dart';
+import 'login.dart';
 import 'widget/text_widget.dart';
 
 class NewPassword extends StatefulWidget {
-  const NewPassword({super.key});
+  const NewPassword({super.key, required this.email});
+
+  final String email;
 
   @override
   State<NewPassword> createState() => _NewPasswordState();
@@ -14,7 +19,61 @@ class _NewPasswordState extends State<NewPassword> {
   bool _obscureText = true;
   bool isFocused = false;
 
-  var passwordController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _repeatPasswordController =
+      TextEditingController();
+
+  final ApiService apiService = ApiService();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _changePassword() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await apiService.changePassword(
+        widget.email.trim(),
+        _passwordController.text.trim(),
+        _repeatPasswordController.text.trim(),
+      );
+
+      if (response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['status'] == 'Success') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(responseData['message'])),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Login()),
+          );
+        } else {
+          setState(() {
+            _errorMessage =
+                'Password change failed: ${responseData['message']}';
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'Password change failed: ${response.body}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An error occurred: $e';
+      });
+      print('Exception: $e');
+      print(widget.email.trim()); // Log the exception for debugging
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,7 +145,7 @@ class _NewPasswordState extends State<NewPassword> {
               height: 15,
             ),
             TextField(
-              controller: passwordController,
+              controller: _passwordController,
               obscureText: _obscureText,
               decoration: InputDecoration(
                 hintText: 'Enter your password',
@@ -137,7 +196,7 @@ class _NewPasswordState extends State<NewPassword> {
               height: 15,
             ),
             TextField(
-              controller: passwordController,
+              controller: _repeatPasswordController,
               obscureText: _obscureText,
               decoration: InputDecoration(
                 hintText: 'Enter your password',
@@ -178,9 +237,26 @@ class _NewPasswordState extends State<NewPassword> {
             const SizedBox(
               height: 100,
             ),
-            const ButtonWidget(
-              text: "Submit",
+            SizedBox(
+              height: 50,
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: _changePassword,
+                child: Text(
+                  'Change Password',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
             ),
+            // const ButtonWidget(
+            //   text: "Submit",
+            // ),
           ],
         ),
       ),

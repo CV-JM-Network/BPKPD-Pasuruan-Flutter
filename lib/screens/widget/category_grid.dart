@@ -18,9 +18,9 @@ class CategoryGrid extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(25),
-              height: 150,
-              width: 150,
+              padding: const EdgeInsets.all(12),
+              height: 65,
+              width: 65,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),

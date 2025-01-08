@@ -1,12 +1,13 @@
+import 'dart:convert';
+
 import 'package:bpkpd_pasuruan_app/screens/login.dart';
+import 'package:bpkpd_pasuruan_app/screens/verification_code.dart';
 import 'package:bpkpd_pasuruan_app/screens/widget/passwordField_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../api_service/api_service.dart';
-import '../api_service/registrasi/registration_request.dart';
 import '../api_service/wa_api_service.dart';
-import 'verification_code.dart';
 import 'widget/inputField_widget.dart';
 import 'widget/text_widget.dart';
 
@@ -21,19 +22,22 @@ class _RegisterState extends State<Register> {
   bool isFocused = false;
   int? _sliding = 1;
 
+  final ApiService apiService = ApiService();
+
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _alamatController = TextEditingController();
   final TextEditingController _telponController = TextEditingController();
-  String? deviceToken = "deviceId"; // Initialize with null
+  // String deviceToken = ''; // Initialize with an empty string
 
   final _apiService = OCAWaApiService();
 
   bool _isLoading = false;
+  String? _errorMessage;
 
-  void _sendMessage() async {
+  Future<void> _sendMessage() async {
     final phoneNumber = _telponController.text.trim();
     final name = _namaController.text.trim();
     const templateCodeId =
@@ -70,6 +74,51 @@ class _RegisterState extends State<Register> {
     }
   }
 
+  Future<void> _register() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final deviceToken = await apiService.getDeviceId();
+      final response = await apiService.registerUser(
+        _emailController.text,
+        _passwordController.text,
+        _namaController.text,
+        _alamatController.text,
+        _telponController.text,
+        deviceToken,
+      );
+
+      if (response.statusCode == 201) {
+        final responseBody = jsonDecode(response.body);
+        final message = responseBody['message'] as String;
+        // Handle success response
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration successful')),
+        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text(message)),
+        // );
+        await _sendMessage();
+      } else {
+        // Handle error response
+        setState(() {
+          _errorMessage = 'Failed to register: ${response.statusCode}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An error occurred: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,26 +136,26 @@ class _RegisterState extends State<Register> {
                   ),
                   Row(
                     children: [
-                      Expanded(
-                        child: CupertinoSlidingSegmentedControl(
-                          children: {
-                            0: buildSegment("Sign in"),
-                            1: buildSegment("Sign up"),
-                          },
-                          groupValue: _sliding,
-                          onValueChanged: (int? newValue) {
-                            setState(() {
-                              _sliding = newValue;
-                              if (newValue == 0) {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => const Login()));
-                              }
-                            });
-                          },
-                        ),
-                      ),
+                      // Expanded(
+                      //   child: CupertinoSlidingSegmentedControl(
+                      //     children: {
+                      //       0: buildSegment("Sign in"),
+                      //       1: buildSegment("Sign up"),
+                      //     },
+                      //     groupValue: _sliding,
+                      //     onValueChanged: (int? newValue) {
+                      //       setState(() {
+                      //         _sliding = newValue;
+                      //         if (newValue == 0) {
+                      //           Navigator.push(
+                      //               context,
+                      //               MaterialPageRoute(
+                      //                   builder: (context) => const Login()));
+                      //         }
+                      //       });
+                      //     },
+                      //   ),
+                      // ),
                     ],
                   ),
                   const SizedBox(
@@ -210,65 +259,46 @@ class _RegisterState extends State<Register> {
                     passwordController: _passwordController,
                   ),
                   const SizedBox(
-                    height: 55,
+                    height: 85,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 55),
-                    child: SizedBox(
-                      height: 50,
-                      width: double.infinity,
-                      child: Expanded(
-                          child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                  _isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : Padding(
+                          padding: const EdgeInsets.only(bottom: 55),
+                          child: SizedBox(
+                            height: 50,
+                            width: double.infinity,
+                            child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
-                              ),
-                              onPressed: () async {
-                                if (_formKey.currentState!.validate()) {
-                                  try {
-                                    final request = RegistrationRequest(
-                                      email: _emailController.text,
-                                      password: _passwordController.text,
-                                      nama: _namaController.text,
-                                      alamat: _alamatController.text,
-                                      telpon: _telponController.text,
-                                      deviceToken: deviceToken!,
-                                    );
-
-                                    final response = await ApiService()
-                                        .registerUser(request);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(response.message)),
-                                    );
-
-                                    _sendMessage();
-                                    // Navigate to Confirmation Screen
+                                onPressed: () {
+                                  if (_formKey.currentState!.validate()) {
+                                    _register();
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => VerificationCode(
-                                          email: _emailController.text,
-                                        ),
+                                        builder: (context) =>
+                                            VerificationCode(
+                                          phone_number:
+                                              _telponController.text,
+                                          nama: _namaController.text,
+                                          // devideId: widget,
+                                        ), // Kirim ID permohonan yang dipilih
                                       ),
                                     );
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content:
-                                              Text('Registration failed: $e')),
-                                    );
                                   }
-                                }
-                              },
-                              child: const TextWidget(
-                                  text: "Sign up",
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white))),
-                    ),
-                  ),
+                                },
+                                child: const TextWidget(
+                                    text: "Sign up",
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white)),
+                          ),
+                        ),
                 ],
               ),
             ),
